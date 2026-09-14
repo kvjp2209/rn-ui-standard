@@ -1,0 +1,19 @@
+{
+  "name": "rn-ui-standard",
+  "owner": {
+    "name": "rn-ui-standard maintainers"
+  },
+  "metadata": {
+    "description": "Quy chuẩn UI dùng chung cho các dự án React Native + Restyle",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "rn-ui-standard",
+      "source": "./",
+      "description": "Quy chuẩn UI cho dự án React Native dùng Shopify Restyle",
+      "version": "1.0.0",
+      "category": "development"
+    }
+  ]
+}

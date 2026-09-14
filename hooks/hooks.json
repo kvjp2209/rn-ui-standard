@@ -1,0 +1,17 @@
+{
+  "description": "Nhắc nạp skill ui-standard trước lần ghi file .tsx đầu tiên của mỗi phiên",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/ui-reminder.sh\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
