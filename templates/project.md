@@ -1,5 +1,15 @@
+---
+preset: rn-cli
+react-compiler: false
+---
+
 # Overlay UI của dự án
 
+> Front matter: `preset` là `rn-cli` (React Native CLI, alias `@components`…) hoặc
+> `expo-router` (Expo Router, alias `@/…`); `react-compiler` là `true` nếu dự án bật React
+> Compiler. Bộ kiểm import và ESLint đọc `preset`; skill đọc cả hai. Bảng map ở
+> `references/conventions.md` của skill.
+>
 > Copy file này vào `docs/ui-standard/project.md` của dự án rồi điền. Skill
 > `rn-ui-standard:ui-standard` đọc file này trước khi viết UI, và **overlay thắng skill**
 > khi hai bên nói khác nhau.
@@ -82,7 +92,7 @@ Tương phản đã đo (WCAG AA: chữ thường 4.5:1, chữ lớn & UI 3:1):
 | Presenter miền | `<src/api/…/….presenter.ts>` |
 | Skeleton của một màn | `<…/skeletons/…>` |
 | Store có trường `error` | `<src/stores/…>` |
-| Kiểu route | `src/navigation/types.ts` |
+| Kiểu route | `src/navigation/types.ts` (rn-cli) \| file route trong `src/app/` (expo-router) |
 
 ## 6. Kit & component dùng chung của dự án
 

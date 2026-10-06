@@ -1,4 +1,3 @@
-/* eslint-env jest */
 /**
  * Locks the ui-standard token CONTRACT (names and shape), not the brand values.
  * Copy to src/theme/__tests__/ and set SIZES / SPACING / RADII from the overlay.
@@ -8,7 +7,7 @@
  * Copy vào src/theme/__tests__/ rồi đặt SIZES / SPACING / RADII theo overlay.
  * Muốn khoá cả giá trị thì viết thêm test riêng của dự án bên cạnh.
  */
-import { defaultTheme } from '@theme';
+import { defaultTheme } from '..';
 
 const SIZES = [12, 14, 16, 18, 24, 30] as const;
 const WEIGHTS = { R: '400', M: '500', SB: '600', B: '700' } as const;
