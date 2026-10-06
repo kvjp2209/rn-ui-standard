@@ -36,7 +36,11 @@ const main = () => {
   });
 
   console.log(`\n${total} vi phạm ở ${dirty}/${files.length} file.`);
-  process.exit(total ? 1 : 0);
+  // Set exitCode instead of calling process.exit(): exiting at once drops output still queued on a
+  // full pipe, so a slow reader (`| less`, a CI log collector) would lose the end of the report.
+  // Gán exitCode thay vì gọi process.exit(): thoát ngay sẽ bỏ phần đầu ra còn xếp hàng trên pipe
+  // đầy, bên đọc chậm (`| less`, bộ thu log CI) sẽ mất phần cuối báo cáo.
+  process.exitCode = total ? 1 : 0;
 };
 
 // Errors a user can fix (unknown preset, unreadable overlay or --config, bad flags, a target path
@@ -53,5 +57,7 @@ try {
   main();
 } catch (error) {
   console.error(isUsageError(error) ? error.message : (error?.stack ?? String(error)));
-  process.exit(2);
+  // exitCode here too, for the same reason as in main.
+  // Ở đây cũng dùng exitCode, cùng lý do như trong main.
+  process.exitCode = 2;
 }

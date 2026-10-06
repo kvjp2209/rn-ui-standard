@@ -1,6 +1,7 @@
 import { after, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
+import { once } from 'node:events';
 import {
   copyFileSync,
   mkdtempSync,
@@ -11,6 +12,7 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { delimiter, dirname, join } from 'node:path';
+import { setTimeout as sleep } from 'node:timers/promises';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import {
@@ -403,3 +405,48 @@ test('CLI chạy được qua symlink node_modules/.bin như khi yarn/npm cài b
   // Mã thoát 0 một mình có thể là "không thấy gì": file phải thật sự được quét.
   assert.match(result.stdout, /0 vi phạm ở 0\/1 file/, outputOf(result));
 });
+
+// A pipe holds about 64 KB. The test stays off stdout until the CLI has filled the pipe and run its
+// last statement, as a slow consumer would: process.exit() at that point drops the output still
+// queued (the summary line goes missing), while setting process.exitCode lets the CLI drain it.
+// Pipe chứa chừng 64 KB. Test chưa đọc stdout cho tới khi CLI đã làm đầy pipe và chạy tới câu lệnh
+// cuối, như một bên đọc chậm: lúc đó process.exit() bỏ phần đầu ra còn xếp hàng (mất dòng tổng
+// kết), còn gán process.exitCode thì CLI xả hết rồi mới thoát.
+test(
+  'CLI không cắt cụt stdout khi đầu ra lớn hơn bộ đệm pipe và bên đọc chậm',
+  { ...POSIX_ONLY, timeout: 20_000 },
+  async () => {
+    const dir = makeProject(EXPO_OVERLAY);
+    mkdirSync(join(dir, 'src'));
+    // Tier 2 and tier 1 imports alternating: three violations per pair, about 200 KB of output.
+    // Import tầng 2 và tầng 1 xen kẽ: mỗi cặp ba vi phạm, khoảng 200 KB đầu ra.
+    const imports = Array.from({ length: 600 }, (_, i) => [
+      `import a${i} from 'expo-router';`,
+      `import b${i} from '@/components/Kit';`,
+    ]).flat();
+    writeFileSync(join(dir, 'src/Bad.tsx'), `${imports.join('\n')}\n`);
+
+    const child = spawn(process.execPath, [CLI], { cwd: dir, stdio: ['ignore', 'pipe', 'pipe'] });
+    try {
+      let stderr = '';
+      child.stderr.setEncoding('utf8').on('data', chunk => {
+        stderr += chunk;
+      });
+      const closed = once(child, 'close');
+
+      await sleep(400);
+
+      let stdout = '';
+      child.stdout.setEncoding('utf8').on('data', chunk => {
+        stdout += chunk;
+      });
+      const [status] = await closed;
+
+      const detail = `status ${status}, stdout ${stdout.length} chars, tail: ${JSON.stringify(stdout.slice(-120))}\nstderr:\n${stderr}`;
+      assert.equal(status, 1, detail);
+      assert.match(stdout, /\n\d+ vi phạm ở 1\/1 file\.\n$/, detail);
+    } finally {
+      child.kill();
+    }
+  },
+);

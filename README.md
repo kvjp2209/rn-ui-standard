@@ -50,8 +50,16 @@ claude plugin install rn-ui-standard@rn-ui-standard --scope project
 Với đường dẫn local, CLI ghi `"source": { "source": "directory", "path": "…" }` — chỉ đúng
 trên máy đó. Dùng git URL để cả team dùng được.
 
-**2. Tạo overlay:** copy `templates/project.md` → `docs/ui-standard/project.md`, đặt
-`preset` / `react-compiler` ở front matter, điền phần còn lại.
+Tuỳ chọn: thay lệnh `marketplace add` ở trên bằng bản ghim vào cùng tag với devDependency ở bước
+4, để nội dung skill và bộ công cụ luôn khớp phiên bản:
+
+```bash
+claude plugin marketplace add https://github.com/kvjp2209/rn-ui-standard.git#v1.2.0 --scope project
+```
+
+**2. Tạo overlay:** copy `templates/project.md` → `docs/ui-standard/project.md`, đặt `preset`
+ở front matter (`react-compiler` là tuỳ chọn, chỉ thêm khi khác mặc định của preset), điền phần
+còn lại.
 
 **3. Trỏ từ `CLAUDE.md` của dự án:**
 
@@ -67,16 +75,26 @@ code UI đầu tiên.
 yarn add -D github:kvjp2209/rn-ui-standard#v1.2.0 eslint@^9
 ```
 
-`eslint.config.js` (flat config):
+`eslint.config.js` (flat config) cho dự án Expo SDK 57, nền là `eslint-config-expo`:
 
 ```js
+// eslint.config.js
+const { defineConfig } = require('eslint/config');
+const expoConfig = require('eslint-config-expo/flat');
 const uiStandard = require('rn-ui-standard/eslint');
 
 module.exports = defineConfig([
-  // …config sẵn có của dự án
-  uiStandard({ preset: 'expo-router' }),
+  expoConfig,
+  ...uiStandard({ preset: 'expo-router' }),
 ]);
 ```
+
+`uiStandard('expo-router')` là cách viết gọn; không truyền gì thì dùng `rn-cli`.
+
+Factory không đặt parser và không bật luật `react-hooks`: config nền của dự án (vd
+`eslint-config-expo` hoặc `typescript-eslint`) phải parse được TS, và dự án tự đặt
+`react-hooks/exhaustive-deps: 'error'` (skill kỳ vọng `error`; `eslint-config-expo` 57 chỉ để
+`warn`).
 
 `package.json`:
 
@@ -102,13 +120,18 @@ yarn rn-ui-check-imports src                                              # có 
 node <đường-dẫn-plugin>/skills/ui-standard/scripts/check-import-order.mjs src  # không có
 ```
 
-Bộ kiểm chọn tầng theo thứ tự `--config tiers.json` > `--preset <tên>` > `preset` trong front
-matter của `docs/ui-standard/project.md` (tính từ thư mục đang chạy) > `rn-cli`. Hai cờ nhận cả
-dạng `--preset=<tên>` lẫn `--config=<file>`; dòng `preset:` ở front matter có thể đặt trong nháy
-hoặc kèm chú thích `# …` cuối dòng.
+Preset được chọn theo thứ tự `--preset <tên>` > `preset` trong front matter của
+`docs/ui-standard/project.md` > `rn-cli`. `--config tiers.json` (nếu có) ghi đè từng khoá
+(`tier1`, `shared`, `local`, `api`, `stores`) của preset đã chọn, nên dự án có alias khác chỉ cần
+ghi các khoá nó đổi. Hai cờ nhận cả dạng `--preset=<tên>` lẫn `--config=<file>`; dòng `preset:` ở
+front matter có thể đặt trong nháy hoặc kèm chú thích `# …` cuối dòng.
 
-Mã thoát: `0` sạch, `1` còn vi phạm (dùng được trong lint-staged/CI), `2` lỗi cách dùng — tham
-số sai, preset không tồn tại, front matter hoặc `--config` hỏng, đường dẫn không có.
+Khi không có `--preset`, overlay được tìm ở thư mục đang chạy, nên chạy từ gốc dự án (script
+`lint:imports` ở bước 4 luôn chạy ở đó). Chỉ quét file `.ts` / `.tsx`.
+
+Mã thoát: `0` sạch, `1` còn vi phạm (dùng được trong lint-staged/CI), `2` lỗi — lỗi cách dùng
+(tham số sai, preset không tồn tại, dòng `preset:` không đọc được hoặc `--config` hỏng, đường dẫn
+không có) chỉ in thông điệp, lỗi nội bộ thì in kèm stack.
 
 ## ESLint 9
 

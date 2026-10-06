@@ -115,7 +115,7 @@ return {
 
 ## memo / useMemo / useCallback
 
-### React Compiler bật (`react-compiler: true`)
+### React Compiler bật (mặc định của preset `expo-router`, hoặc `react-compiler: true`)
 
 - **Không** bọc `memo` / `useMemo` / `useCallback` thủ công — compiler tự memo component, giá
   trị dẫn xuất và handler. Màn `export default Screen`.
@@ -123,7 +123,7 @@ return {
   tại chỗ.
 - Mục dưới không áp dụng.
 
-### React Compiler tắt (mặc định của `rn-cli`)
+### React Compiler tắt (mặc định của preset `rn-cli`, hoặc `react-compiler: false`)
 
 - **Màn hình luôn `export default memo(Screen)`.**
 - **Component con: chỉ `memo` khi prop thật sự ổn định.** Mở nơi gọi ra xem — `memo` vô
