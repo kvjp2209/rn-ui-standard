@@ -1,11 +1,15 @@
 /**
  * Flat-config factory for the machine-checkable part of ui-standard.
- * Usage in eslint.config.js: `...require('rn-ui-standard/eslint')({ preset: 'expo-router' })`.
+ * Usage in eslint.config.js: `...require('rn-ui-standard/eslint')({ preset: 'expo-router' })`;
+ * a bare string works too (`...require('rn-ui-standard/eslint')('expo-router')`), and with no
+ * argument the preset is rn-cli.
  * Not enforceable here: the ≤5-prop threshold, the 4 data states, hitSlop and
  * the import pyramid (run rn-ui-check-imports for the last one).
  *
  * Factory flat config cho phần máy kiểm được của ui-standard.
- * Dùng trong eslint.config.js: `...require('rn-ui-standard/eslint')({ preset: 'expo-router' })`.
+ * Dùng trong eslint.config.js: `...require('rn-ui-standard/eslint')({ preset: 'expo-router' })`;
+ * truyền chuỗi trần cũng được (`...require('rn-ui-standard/eslint')('expo-router')`), còn khi
+ * không truyền gì thì preset là rn-cli.
  * Không chặn được ở đây: ngưỡng 5 prop, 4 trạng thái, hitSlop và kim tự tháp
  * import (cái cuối chạy rn-ui-check-imports).
  */
@@ -15,9 +19,14 @@ const reactNative = require('eslint-plugin-react-native');
 
 const HEX_LITERAL = 'Literal[value=/^#([0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/]';
 const RN_PRIMITIVES = ['View', 'Text', 'Image', 'ScrollView', 'TextInput', 'Pressable'];
+// Icon libraries that must go through Icon; react-native-vector-icons >= 11 ships scoped
+// packages (@react-native-vector-icons/ionicons, ...).
+// Thư viện icon phải đi qua Icon; react-native-vector-icons >= 11 tách thành các package
+// scoped (@react-native-vector-icons/ionicons, ...).
 const ICON_LIBRARIES = [
   'react-native-vector-icons',
   'react-native-vector-icons/*',
+  '@react-native-vector-icons/*',
   '@expo/vector-icons',
   '@expo/vector-icons/*',
   'lucide-react-native',
@@ -41,8 +50,14 @@ const loadPreset = name => {
   return JSON.parse(fs.readFileSync(path.join(PRESETS_DIR, `${name}.json`), 'utf8'));
 };
 
-module.exports = function uiStandard({ preset = 'rn-cli' } = {}) {
+module.exports = function uiStandard(options = {}) {
+  // A bare string is shorthand for { preset }.
+  // Chuỗi trần là cách viết gọn của { preset }.
+  const { preset = 'rn-cli' } = typeof options === 'string' ? { preset: options } : options;
   const { imports, paths } = loadPreset(preset);
+  const iconPatterns = [
+    { group: ICON_LIBRARIES, message: `Dùng <Icon name="..." /> từ ${imports.icon}.` },
+  ];
   const lookupTables = [
     `${paths.locale}/**`,
     `${paths.icon}/**`,
@@ -53,9 +68,16 @@ module.exports = function uiStandard({ preset = 'rn-cli' } = {}) {
 
   return [
     {
+      // Registered for every file (no `files`) so a consumer can enable react-native/* rules
+      // outside src/** without "Could not find plugin"; registering a plugin enables no rule.
+      // Đăng ký cho mọi file (không có `files`) để consumer bật được rule react-native/* ngoài
+      // src/** mà không bị "Could not find plugin"; đăng ký plugin không tự bật rule nào.
+      name: 'rn-ui-standard/plugins',
+      plugins: { 'react-native': reactNative },
+    },
+    {
       name: 'rn-ui-standard/rules',
       files: SOURCE_FILES,
-      plugins: { 'react-native': reactNative },
       rules: {
         'react-native/no-color-literals': 'error',
         'react-native/no-inline-styles': 'error',
@@ -70,12 +92,7 @@ module.exports = function uiStandard({ preset = 'rn-cli' } = {}) {
                 message: `Dùng Kit (Box, Text, Image, ScrollView, TextInput, Pressable) từ ${imports.kit}.`,
               },
             ],
-            patterns: [
-              {
-                group: ICON_LIBRARIES,
-                message: `Dùng <Icon name="..." /> từ ${imports.icon}.`,
-              },
-            ],
+            patterns: iconPatterns,
           },
         ],
         'no-restricted-syntax': [
@@ -94,10 +111,17 @@ module.exports = function uiStandard({ preset = 'rn-cli' } = {}) {
       },
     },
     {
-      // Kit and Icon wrap the primitives, so they may import them.
-      // Kit và Icon bọc primitive nên được import chúng.
-      name: 'rn-ui-standard/kit-and-icon',
-      files: [`${paths.kit}/**`, `${paths.icon}/**`],
+      // Kit wraps the primitives, so it may import them; icon libraries still go through Icon.
+      // Kit bọc primitive nên được import chúng; thư viện icon vẫn phải đi qua Icon.
+      name: 'rn-ui-standard/kit',
+      files: [`${paths.kit}/**`],
+      rules: { 'no-restricted-imports': ['error', { patterns: iconPatterns }] },
+    },
+    {
+      // Icon wraps the icon libraries (and the primitives), so it may import them.
+      // Icon bọc thư viện icon (và cả primitive) nên được import chúng.
+      name: 'rn-ui-standard/icon',
+      files: [`${paths.icon}/**`],
       rules: { 'no-restricted-imports': 'off' },
     },
     {
