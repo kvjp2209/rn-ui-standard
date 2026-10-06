@@ -1,0 +1,33 @@
+{
+  "name": "expo-router",
+  "router": "expo-router",
+  "reactCompiler": true,
+  "imports": {
+    "kit": "@/components/Kit",
+    "icon": "@/components/Icon"
+  },
+  "paths": {
+    "kit": "src/components/Kit",
+    "icon": "src/components/Icon",
+    "theme": "src/theme",
+    "locale": "src/locale",
+    "constants": "src/constants",
+    "routeTypes": null
+  },
+  "importTiers": {
+    "tier1": ["react", "react-native", "@/components/Kit"],
+    "shared": [
+      "@/assets",
+      "@/components",
+      "@/constants",
+      "@/hooks",
+      "@/libs",
+      "@/locale",
+      "@/theme",
+      "@/utils"
+    ],
+    "local": ["@/screens"],
+    "api": ["@/api"],
+    "stores": ["@/stores"]
+  }
+}

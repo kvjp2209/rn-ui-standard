@@ -1,0 +1,37 @@
+{
+  "name": "rn-cli",
+  "router": "react-navigation",
+  "reactCompiler": false,
+  "imports": {
+    "kit": "@components/Kit",
+    "icon": "@components/Icon"
+  },
+  "paths": {
+    "kit": "src/components/Kit",
+    "icon": "src/components/Icon",
+    "theme": "src/theme",
+    "locale": "src/locale",
+    "constants": "src/constants",
+    "routeTypes": "src/navigation/types.ts"
+  },
+  "importTiers": {
+    "tier1": ["react", "react-native", "@components/Kit"],
+    "shared": [
+      "@app",
+      "@assets",
+      "@components",
+      "@constants",
+      "@hooks",
+      "@libs",
+      "@locale",
+      "@modules",
+      "@navigation",
+      "@theme",
+      "@utils",
+      "@src"
+    ],
+    "local": ["@src/screens"],
+    "api": ["@api"],
+    "stores": ["@stores"]
+  }
+}
