@@ -1,10 +1,10 @@
 /**
  * Locks the ui-standard token CONTRACT (names and shape), not the brand values.
- * Copy to src/theme/__tests__/ and set SIZES / SPACING / RADII from the overlay.
+ * Copy to src/theme/__tests__/ and set SIZES / RADII from the overlay.
  * Add a project-specific test next to it if you also want to lock values.
  *
  * Khoá HỢP ĐỒNG token của ui-standard (tên và hình dạng), không khoá giá trị thương hiệu.
- * Copy vào src/theme/__tests__/ rồi đặt SIZES / SPACING / RADII theo overlay.
+ * Copy vào src/theme/__tests__/ rồi đặt SIZES / RADII theo overlay.
  * Muốn khoá cả giá trị thì viết thêm test riêng của dự án bên cạnh.
  */
 import { defaultTheme } from '..';

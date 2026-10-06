@@ -100,12 +100,14 @@ import OrderRow from './components/OrderRow';
 import { detailSheetRef } from '@src/screens/OrderDetails/constants';
 ```
 
-Cùng file đó với preset `expo-router` (React Compiler bật nên không `memo`/`useCallback`):
+File tương đương với preset `expo-router` (React Compiler bật nên không `memo`/`useCallback`;
+điều hướng bằng `router` của `expo-router`):
 
 ```ts
 import { StyleSheet } from 'react-native';
 import { Box, Pressable, Text } from '@/components/Kit';
 
+import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
 import { useThemeStyles } from '@/theme';

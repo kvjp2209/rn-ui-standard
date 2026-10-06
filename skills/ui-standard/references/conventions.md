@@ -53,7 +53,9 @@ compiler thì ghi `react-compiler: false` và theo luật memo bản thường.
 
 - `src/app/` **chỉ chứa route**: mọi file ở đó là một màn của router, `_layout.tsx` định nghĩa
   navigator. Component, hook, utils nằm ngoài `src/app/`.
-- File route đặt tên **viết thường** vì là URL (`index.tsx`, `[orderId].tsx`, `(tabs)/`) — ngoại lệ
-  duy nhất của luật PascalCase.
+- Tên file route **theo URL**: segment viết thường hoặc kebab-case (`index.tsx`,
+  `order-history.tsx`), tham số động đặt theo tên tham số (`[orderId].tsx`), nhóm nằm trong
+  ngoặc tròn (`(tabs)/`) — đây là ngoại lệ duy nhất của luật PascalCase cho thư mục và
+  component.
 - File route chỉ lo việc của route (đọc params, tuỳ chọn header) rồi render màn từ
   `src/screens/<Màn>`.

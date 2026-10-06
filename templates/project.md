@@ -7,9 +7,12 @@ react-compiler: false
 
 > Front matter: `preset` là `rn-cli` (React Native CLI, alias `@components`…) hoặc
 > `expo-router` (Expo Router, alias `@/…`); `react-compiler` là `true` nếu dự án bật React
-> Compiler. Bộ kiểm import đọc `preset` trong front matter; factory ESLint nhận preset qua
-> tham số `uiStandard({ preset })` — đặt cùng giá trị với front matter; skill đọc cả `preset`
-> lẫn `react-compiler`. Bảng map ở `references/conventions.md` của skill.
+> Compiler. `react-compiler` trong front matter thắng giá trị mặc định của preset
+> (`expo-router` mặc định `true`) — đổi `preset` sang `expo-router` thì đặt luôn
+> `react-compiler: true`, hoặc xoá khoá này để lấy mặc định. Bộ kiểm import đọc `preset`
+> trong front matter; factory ESLint nhận preset qua tham số `uiStandard({ preset })` — đặt
+> cùng giá trị với front matter; skill đọc cả `preset` lẫn `react-compiler`. Bảng map ở
+> `references/conventions.md` của skill.
 >
 > Copy file này vào `docs/ui-standard/project.md` của dự án rồi điền. Skill
 > `rn-ui-standard:ui-standard` đọc file này trước khi viết UI, và **overlay thắng skill**

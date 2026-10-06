@@ -12,7 +12,8 @@ src/screens/<Màn>/
 ```
 
 KHÔNG nhét nhiều màn vào một thư mục. Dấu hiệu đã sai: navigator phải import kiểu
-`@src/screens/A/B` — thò tay vào ruột thư mục của màn khác.
+`@src/screens/A/B` (expo-router: file route phải import `@/screens/A/B`) — thò tay vào ruột
+thư mục của màn khác.
 
 Preset `expo-router`: file route trong `src/app/` chỉ đọc params và render màn từ
 `src/screens/<Màn>`; không đặt component, hook, utils trong `src/app/`.
@@ -93,7 +94,7 @@ export default function OrderDetailsRoute() {
 ## Thứ tự `return` của hook & destructure — kim tự tháp hai nhóm
 
 1. **Giá trị** — state, ref, giá trị tính toán, `t`
-2. **Hàm** — `set*`, `handle*`, `on*`, mọi `useCallback`
+2. **Hàm** — `set*`, `handle*`, `on*` (kể cả `useCallback` khi compiler tắt)
 
 Mỗi nhóm ngắn trên dài dưới. **Destructure phía dùng giữ đúng thứ tự** để hai bên đọc
 song song. Không trả ra khoá mà component không dùng.
@@ -132,4 +133,7 @@ return {
   việc cần làm.
 - `React.memo` xoá type parameter của component generic — với component nhỏ, không đáng.
 - `useCallback` cho handler trả ra từ `.logic.ts`; `useMemo` cho dẫn xuất trả mảng/object.
-- `react-hooks/exhaustive-deps` ở mức `error`: lint xanh nghĩa là dependency đúng.
+
+### Cả hai chế độ
+
+`react-hooks/exhaustive-deps` ở mức `error`: lint xanh nghĩa là dependency đúng.

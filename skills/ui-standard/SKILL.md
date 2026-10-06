@@ -49,7 +49,7 @@ Chi tiết từng mảng nằm ở `references/` — mở đúng file khi đụn
 5. **Style phải qua `StyleSheet.create`**, đặt cuối file sau `export default`. Cấm object
    literal trần (`const s = { alignItems: 'center' as const }`) — phải rắc `as const` là
    dấu hiệu đang làm sai. Giá trị động (safe-area inset…) thì `useMemo` theo đúng biến đó,
-   kèm comment vì sao.
+   kèm comment vì sao (compiler bật: viết thẳng, compiler tự memo).
 6. **BẪY: mọi variant `T*` nướng sẵn `color: '$text'`.** `Text` trên nền `$brand`/`$cta`
    mà không truyền `color` sẽ gần như vô hình. Test không bắt được. **Đổi `variant` thì
    kiểm màu nền khối bao.**
@@ -88,8 +88,9 @@ Chi tiết từng mảng nằm ở `references/` — mở đúng file khi đụn
     params. Xem `structure-naming.md`.
 17. **memo theo React Compiler của dự án.** Compiler tắt: màn luôn
     `export default memo(Screen)`, component con chỉ `memo` khi prop thật sự ổn định.
-    Compiler bật (`react-compiler: true`): không bọc `memo`/`useMemo`/`useCallback` thủ công,
-    màn `export default Screen`. Xem `structure-naming.md`.
+    Compiler bật (mặc định của preset `expo-router`, hoặc `react-compiler: true`): không bọc
+    `memo`/`useMemo`/`useCallback` thủ công, màn `export default Screen`. Xem
+    `structure-naming.md`.
 
 ### Trạng thái & chữ
 
