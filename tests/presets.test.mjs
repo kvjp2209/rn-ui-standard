@@ -2,6 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
+import { tierOf } from '../skills/ui-standard/scripts/import-order-lib.mjs';
+
 // Invariants every preset in presets/*.json must satisfy.
 // Các bất biến mà mọi preset trong presets/*.json phải thỏa mãn.
 
@@ -18,35 +20,45 @@ const ROUTERS = ['react-navigation', 'expo-router'];
 const loadPreset = name =>
   JSON.parse(readFileSync(new URL(`../presets/${name}.json`, import.meta.url), 'utf8'));
 
-// Same alias rule as the import-order checker: the alias itself or a sub-path of it.
-// Cùng luật khớp alias với bộ kiểm thứ tự import: chính alias đó hoặc đường dẫn con của nó.
-const matches = (path, alias) => path === alias || path.startsWith(`${alias}/`);
-const matchesAny = (path, aliases) => aliases.some(alias => matches(path, alias));
-
 for (const name of PRESET_NAMES) {
   test(`${name}: trường name trùng với tên file`, () => {
     assert.equal(loadPreset(name).name, name);
   });
 
-  test(`${name}: imports.kit là một phần tử của importTiers.tier1`, () => {
+  // Each preset must define exactly these keys in paths, imports and importTiers.
+  // Mỗi preset phải khai báo đúng các khoá này trong paths, imports và importTiers.
+  test(`${name}: đủ khoá bắt buộc`, () => {
+    const { paths, imports, importTiers } = loadPreset(name);
+    assert.deepEqual(Object.keys(paths).sort(), [
+      'constants',
+      'icon',
+      'kit',
+      'locale',
+      'routeTypes',
+      'theme',
+    ]);
+    assert.deepEqual(Object.keys(imports).sort(), ['icon', 'kit']);
+    assert.deepEqual(Object.keys(importTiers).sort(), [
+      'api',
+      'local',
+      'shared',
+      'stores',
+      'tier1',
+    ]);
+  });
+
+  // tierOf is the checker's own logic, so this test cannot drift from it.
+  // tierOf là chính logic của bộ kiểm, nên test này không thể lệch khỏi nó.
+  test(`${name}: imports.kit rơi vào tầng 1 theo bộ kiểm`, () => {
     const { imports, importTiers } = loadPreset(name);
-    assert.ok(importTiers.tier1.includes(imports.kit), `${imports.kit} không có trong tier1`);
+    assert.equal(tierOf(imports.kit, importTiers), 1, `${imports.kit} không rơi vào tầng 1`);
   });
 
   test(`${name}: imports.icon thuộc tầng shared, không thuộc tier1/local/api/stores`, () => {
     const { imports, importTiers } = loadPreset(name);
-    // Tiers the checker tests before "shared" must not claim the icon import.
-    // Các tầng mà bộ kiểm xét trước "shared" không được nhận import icon.
-    for (const tier of ['tier1', 'local', 'api', 'stores']) {
-      assert.ok(
-        !matchesAny(imports.icon, importTiers[tier]),
-        `${imports.icon} bị khớp nhầm vào ${tier}`,
-      );
-    }
-    assert.ok(
-      matchesAny(imports.icon, importTiers.shared),
-      `${imports.icon} không khớp alias nào trong shared`,
-    );
+    // tierOf tests tier1, local, api, stores before "shared": tier 3 means none took the icon.
+    // tierOf xét tier1, local, api, stores trước "shared": ra tầng 3 nghĩa là không tầng nào nhận icon.
+    assert.equal(tierOf(imports.icon, importTiers), 3, `${imports.icon} không rơi vào tầng 3`);
   });
 
   test(`${name}: mọi paths.* là null (chỉ routeTypes) hoặc đường dẫn bắt đầu bằng src/`, () => {
@@ -70,7 +82,7 @@ for (const name of PRESET_NAMES) {
 
 // Without a catch-all "@", unlisted folders such as @/types/x fall into tier 2 (third-party).
 // Không có catch-all "@" thì các thư mục chưa liệt kê như @/types/x bị xếp vào tầng 2 (thư viện ngoài).
-test('expo-router: phần tử cuối của importTiers.shared là "@" để bắt mọi thư mục @/ chưa liệt kê', () => {
+test('expo-router: importTiers.shared có "@" để bắt mọi thư mục @/ chưa liệt kê', () => {
   const { shared } = loadPreset('expo-router').importTiers;
-  assert.equal(shared.at(-1), '@');
+  assert.ok(shared.includes('@'), 'importTiers.shared thiếu "@"');
 });
