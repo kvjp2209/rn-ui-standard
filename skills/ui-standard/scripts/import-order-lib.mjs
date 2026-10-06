@@ -107,15 +107,33 @@ export const readOverlayPreset = cwd => {
 };
 
 /**
+ * Reads the --config file (path relative to cwd) as JSON. Any failure, a
+ * missing file or invalid JSON alike, is rethrown as a usage error that names
+ * the flag and the path as it was given.
+ *
+ * Đọc file --config (đường dẫn tính từ cwd) dạng JSON. Mọi lỗi, thiếu file hay
+ * JSON sai, đều được ném lại thành lỗi cách dùng, nêu rõ cờ và đường dẫn như
+ * người dùng đã gõ.
+ */
+const readConfigFile = (cwd, file) => {
+  try {
+    return JSON.parse(readFileSync(resolve(cwd, file), 'utf8'));
+  } catch (error) {
+    throw new Error(`[rn-ui-standard] --config ${file}: ${error.message}`);
+  }
+};
+
+/**
  * Picks the tiers: --config (merged key by key, path relative to cwd) >
  * --preset > overlay front matter > rn-cli. Accepts `--flag value` and
- * `--flag=value`; throws on a missing value or an unknown option. Returns the
- * remaining args as targets (default: src).
+ * `--flag=value`; throws on a missing value, an unknown option or a --config
+ * file that cannot be read or parsed. Returns the remaining args as targets
+ * (default: src).
  *
  * Chọn tầng: --config (ghi đè từng khoá, đường dẫn tính từ cwd) > --preset >
  * front matter overlay > rn-cli. Nhận `--cờ giá_trị` và `--cờ=giá_trị`; ném lỗi
- * khi thiếu giá trị hoặc gặp tuỳ chọn lạ. Phần args còn lại là đích kiểm (mặc
- * định: src).
+ * khi thiếu giá trị, gặp tuỳ chọn lạ hoặc file --config không đọc/parse được.
+ * Phần args còn lại là đích kiểm (mặc định: src).
  */
 export const resolveConfig = (argv, cwd = process.cwd()) => {
   const { values, positionals } = parseArgs({
@@ -137,9 +155,7 @@ export const resolveConfig = (argv, cwd = process.cwd()) => {
   }
 
   const config =
-    values.config === undefined
-      ? tiers
-      : { ...tiers, ...JSON.parse(readFileSync(resolve(cwd, values.config), 'utf8')) };
+    values.config === undefined ? tiers : { ...tiers, ...readConfigFile(cwd, values.config) };
 
   return { config, presetName, targets: positionals.length ? positionals : ['src'] };
 };

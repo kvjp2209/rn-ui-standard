@@ -164,9 +164,9 @@ test('thông báo icon trỏ đúng đường dẫn Icon theo preset', () => {
   assert.match(cli.message, /@components\/Icon/);
 });
 
-test('bảng tra gồm cả Icon và constants: không cảnh báo max-lines', () => {
+test('bảng tra gồm cả Icon, constants và theme: không cảnh báo max-lines', () => {
   const long = Array.from({ length: 260 }, (_, i) => `export const v${i} = ${i};`).join('\n');
-  for (const file of ['src/components/Icon/Icon.js', 'src/constants/x.js']) {
+  for (const file of ['src/components/Icon/Icon.js', 'src/constants/x.js', 'src/theme/x.js']) {
     assert.ok(!rulesOf(lint(long, file)).includes('max-lines'), file);
   }
 });

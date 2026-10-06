@@ -9,8 +9,9 @@ react-compiler: true
 ---
 ```
 
-Không có front matter → `rn-cli` (khuôn mặc định, y như bản 1.1). Bộ kiểm import và factory
-ESLint đọc `preset`; skill đọc cả `preset` lẫn `react-compiler`. Giá trị máy đọc nằm ở
+Không có front matter → `rn-cli` (khuôn mặc định, y như bản 1.1). Bộ kiểm import đọc `preset`
+trong front matter; factory ESLint nhận preset qua tham số `uiStandard({ preset })` — đặt cùng
+giá trị với front matter; skill đọc cả `preset` lẫn `react-compiler`. Giá trị máy đọc nằm ở
 `presets/<preset>.json` của plugin.
 
 ## Bảng map

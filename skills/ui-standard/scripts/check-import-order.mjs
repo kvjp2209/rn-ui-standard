@@ -39,13 +39,15 @@ const main = () => {
   process.exit(total ? 1 : 0);
 };
 
-// Errors a user can fix (unknown preset, unreadable overlay, bad flags) print just the message;
-// anything else is an internal error, so its stack is kept for the bug report.
-// Lỗi người dùng tự sửa được (preset lạ, overlay không đọc được, cờ sai) chỉ in thông điệp;
-// lỗi khác là lỗi nội bộ nên giữ stack để báo lỗi.
+// Errors a user can fix (unknown preset, unreadable overlay or --config, bad flags, a target path
+// that does not exist) print just the message; anything else is an internal error, so its stack
+// is kept for the bug report.
+// Lỗi người dùng tự sửa được (preset lạ, overlay hoặc --config không đọc được, cờ sai, đường dẫn
+// đích không tồn tại) chỉ in thông điệp; lỗi khác là lỗi nội bộ nên giữ stack để báo lỗi.
 const isUsageError = error =>
   String(error?.message).startsWith('[rn-ui-standard]') ||
-  String(error?.code).startsWith('ERR_PARSE_ARGS_');
+  String(error?.code).startsWith('ERR_PARSE_ARGS_') ||
+  error?.code === 'ENOENT';
 
 try {
   main();

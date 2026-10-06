@@ -349,6 +349,38 @@ test('CLI thoát mã 2, báo lỗi ở stderr và để trống stdout khi prese
   assert.equal(result.stdout, '', outputOf(result));
 });
 
+// A usage error prints its message only: no stack frame (`    at ...`) may reach stderr.
+// Lỗi cách dùng chỉ in thông điệp: stderr không được lọt dòng stack (`    at ...`).
+const STACK_LINE = /\n\s+at /;
+
+test('CLI thoát mã 2, chỉ in thông điệp (không stack) khi đích kiểm không tồn tại', () => {
+  const result = runCli(['nope-dir'], makeProject());
+  assert.equal(result.status, 2, outputOf(result));
+  assert.match(result.stderr, /nope-dir/, outputOf(result));
+  assert.doesNotMatch(result.stderr, STACK_LINE, outputOf(result));
+  assert.equal(result.stdout, '', outputOf(result));
+});
+
+test('CLI thoát mã 2, chỉ in thông điệp (không stack) khi file --config không phải JSON', () => {
+  const dir = makeProject();
+  writeFileSync(join(dir, 'bad.json'), '{ không phải JSON');
+  const result = runCli(['--config', 'bad.json'], dir);
+  assert.equal(result.status, 2, outputOf(result));
+  assert.match(result.stderr, /--config/, outputOf(result));
+  assert.match(result.stderr, /bad\.json/, outputOf(result));
+  assert.doesNotMatch(result.stderr, STACK_LINE, outputOf(result));
+  assert.equal(result.stdout, '', outputOf(result));
+});
+
+test('CLI thoát mã 2, nêu rõ --config và tên file khi file --config không tồn tại', () => {
+  const result = runCli(['--config', 'thieu.json'], makeProject());
+  assert.equal(result.status, 2, outputOf(result));
+  assert.match(result.stderr, /--config/, outputOf(result));
+  assert.match(result.stderr, /thieu\.json/, outputOf(result));
+  assert.doesNotMatch(result.stderr, STACK_LINE, outputOf(result));
+  assert.equal(result.stdout, '', outputOf(result));
+});
+
 // Test options for spawning a shebang script directly, which only works on POSIX.
 // Tuỳ chọn cho test chạy trực tiếp một script có shebang, chỉ dùng được trên POSIX.
 const POSIX_ONLY = { skip: process.platform === 'win32' && 'chỉ áp dụng trên POSIX' };
