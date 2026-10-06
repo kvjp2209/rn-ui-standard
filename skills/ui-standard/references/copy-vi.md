@@ -21,7 +21,13 @@ viết.
 - Xưng hô nhất quán — mặc định **"bạn"** (overlay có thể đổi).
 - Lỗi: nói rõ chuyện gì xảy ra **+** cách xử lý. Giữ "Rất tiếc" khi lỗi không do người dùng.
 - Chấm than cho lời chào/chúc mừng, **không** cho lỗi kỹ thuật.
-- Không viết hoa Title Case. Câu ngắn, chủ động.
+- Không viết hoa Title Case trong câu chữ. Câu ngắn, chủ động.
+- **Hoa/thường là trình bày, không phải nội dung.** Overlay chốt ngoại lệ viết hoa (vd
+  nhãn nút CTA viết hoa chữ đầu mỗi từ: "Lưu Thay Đổi") thì làm bằng
+  `textTransform="capitalize"` trên Kit `Text`; chuỗi trong file locale vẫn viết dạng câu
+  thường ("Lưu thay đổi"), đừng gõ hoa sẵn. Một key thường được dùng lại ngoài nút (toast,
+  tiêu đề) — gõ hoa sẵn là Title Case rò sang những chỗ đó, và đổi ý phải sửa từng chuỗi ở
+  mọi locale thay vì một prop.
 - Giữ tiểu từ (`nhé`, `nha`, `Rất tiếc`) nơi phù hợp ngữ cảnh.
 
 | Tránh | Nên |

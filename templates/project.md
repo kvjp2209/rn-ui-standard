@@ -67,6 +67,7 @@ Tương phản đã đo (WCAG AA: chữ thường 4.5:1, chữ lớn & UI 3:1):
 
 - Xưng hô: `<bạn>`
 - Ngoại lệ copy đã chốt: `<chuỗi nào giữ nguyên dù trái luật chung>`
+- Ngoại lệ viết hoa: `<không | nhãn nút … viết hoa chữ đầu mỗi từ qua textTransform="capitalize">`
 
 ## 5. File mẫu chuẩn
 
