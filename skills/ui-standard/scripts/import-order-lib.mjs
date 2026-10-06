@@ -1,14 +1,15 @@
 /**
- * Pure logic behind check-import-order.mjs: preset loading, config resolution,
- * import parsing and the four import-order rules. Kept apart from the CLI so it
- * can be tested without spawning a process.
+ * Logic behind check-import-order.mjs, without CLI concerns: preset loading,
+ * config resolution, import parsing and the four import-order rules. Kept apart
+ * from the CLI so it can be tested without spawning a process.
  *
- * Phần logic thuần của check-import-order.mjs: nạp preset, chọn cấu hình, đọc
- * khối import và bốn luật thứ tự import. Tách khỏi CLI để test được mà không
- * cần chạy tiến trình.
+ * Phần logic của check-import-order.mjs, không lo phần CLI: nạp preset, chọn
+ * cấu hình, đọc khối import và bốn luật thứ tự import. Tách khỏi CLI để test
+ * được mà không cần chạy tiến trình.
  */
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
-import { extname, join } from 'node:path';
+import { extname, join, resolve } from 'node:path';
+import { parseArgs } from 'node:util';
 
 export const DEFAULT_PRESET = 'rn-cli';
 export const OVERLAY_PATH = 'docs/ui-standard/project.md';
@@ -24,67 +25,119 @@ export const TIER_LABEL = {
 };
 
 const END_RE = /(from\s+['"][^'"]+['"]|^\s*import\s+['"][^'"]+['"])\s*;?\s*$/;
-const FRONT_MATTER_RE = /^---\r?\n([\s\S]*?)\r?\n---/;
-const PRESET_LINE_RE = /^preset:\s*([\w-]+)\s*$/m;
+const PRESETS_DIR = new URL('../../../presets/', import.meta.url);
+const PRESET_EXT = '.json';
+const PRESET_NAME_RE = /^[\w-]+$/;
+const BOM_RE = /^\uFEFF/;
+const FRONT_MATTER_FENCE = '---';
+const OVERLAY_PRESET_RE = /^preset:[ \t]*(['"]?)([\w-]+)\1[ \t]*(?:#.*)?$/;
 
 const matches = (path, alias) => path === alias || path.startsWith(`${alias}/`);
 const matchesAny = (path, aliases) => aliases.some(a => matches(path, a));
 const stripComment = line => line.replace(/\s*\/\/.*$/, '');
 
 /**
- * Loads presets/<name>.json from the plugin root.
+ * Lists the presets shipped in presets/ (file names without .json), sorted.
  *
- * Nạp presets/<name>.json ở gốc plugin.
+ * Liệt kê các preset có sẵn trong presets/ (tên file bỏ .json), đã sắp xếp.
+ */
+const listPresets = () =>
+  readdirSync(PRESETS_DIR)
+    .filter(file => file.endsWith(PRESET_EXT))
+    .map(file => file.slice(0, -PRESET_EXT.length))
+    .sort();
+
+/**
+ * Loads presets/<name>.json from the plugin root. Throws when the name is not
+ * a shipped preset (which also keeps names like ../package out of the path) or
+ * when the file has no importTiers.
+ *
+ * Nạp presets/<name>.json ở gốc plugin. Ném lỗi khi tên không phải preset có
+ * sẵn (nhờ đó tên kiểu ../package không lọt vào đường dẫn) hoặc file thiếu
+ * importTiers.
  */
 export const loadPreset = name => {
-  const url = new URL(`../../../presets/${name}.json`, import.meta.url);
-  if (!existsSync(url)) {
-    throw new Error(`[rn-ui-standard] preset không tồn tại: ${name} (có: rn-cli, expo-router)`);
+  const available = listPresets();
+  if (!PRESET_NAME_RE.test(name) || !available.includes(name)) {
+    throw new Error(
+      `[rn-ui-standard] preset không tồn tại: ${name} (có: ${available.join(', ')})`,
+    );
   }
-  return JSON.parse(readFileSync(url, 'utf8'));
+
+  const preset = JSON.parse(readFileSync(new URL(`${name}${PRESET_EXT}`, PRESETS_DIR), 'utf8'));
+  if (!preset?.importTiers) {
+    throw new Error(`[rn-ui-standard] preset ${name} thiếu khoá importTiers`);
+  }
+  return preset;
 };
 
 /**
- * Reads `preset:` from the overlay front matter under cwd; null when the
- * overlay or the key is missing.
+ * Reads `preset:` from the overlay front matter under cwd. Returns null when
+ * there is no overlay, no front matter (a block between two `---` lines at the
+ * top of the file) or no `preset:` key; throws when the `preset:` line cannot
+ * be read. Accepts quotes, a trailing `# comment`, a UTF-8 BOM and CRLF.
  *
- * Đọc `preset:` trong front matter của overlay dưới cwd; trả null khi không có
- * overlay hoặc không có khoá.
+ * Đọc `preset:` trong front matter của overlay dưới cwd. Trả null khi không có
+ * overlay, không có front matter (khối nằm giữa hai dòng `---` ở đầu file)
+ * hoặc không có khoá `preset:`; ném lỗi khi dòng `preset:` không đọc được.
+ * Chấp nhận nháy, chú thích `# …` cuối dòng, BOM UTF-8 và CRLF.
  */
 export const readOverlayPreset = cwd => {
   const overlay = join(cwd, OVERLAY_PATH);
   if (!existsSync(overlay)) return null;
 
-  const frontMatter = readFileSync(overlay, 'utf8').match(FRONT_MATTER_RE);
-  const preset = frontMatter?.[1].match(PRESET_LINE_RE);
-  return preset ? preset[1] : null;
+  const lines = readFileSync(overlay, 'utf8').replace(BOM_RE, '').split(/\r?\n/);
+  if (lines[0] !== FRONT_MATTER_FENCE) return null;
+
+  const closing = lines.indexOf(FRONT_MATTER_FENCE, 1);
+  if (closing === -1) return null;
+
+  const line = lines.slice(1, closing).find(l => l.startsWith('preset:'));
+  if (line === undefined) return null;
+
+  const match = line.match(OVERLAY_PRESET_RE);
+  if (!match) {
+    throw new Error(`[rn-ui-standard] không đọc được \`preset\` trong ${OVERLAY_PATH}: ${line}`);
+  }
+  return match[2];
 };
 
 /**
- * Picks the tiers: --config (merged key by key) > --preset > overlay front
- * matter > rn-cli. Returns the remaining args as targets (default: src).
+ * Picks the tiers: --config (merged key by key, path relative to cwd) >
+ * --preset > overlay front matter > rn-cli. Accepts `--flag value` and
+ * `--flag=value`; throws on a missing value or an unknown option. Returns the
+ * remaining args as targets (default: src).
  *
- * Chọn tầng: --config (ghi đè từng khoá) > --preset > front matter overlay >
- * rn-cli. Phần args còn lại là đích kiểm (mặc định: src).
+ * Chọn tầng: --config (ghi đè từng khoá, đường dẫn tính từ cwd) > --preset >
+ * front matter overlay > rn-cli. Nhận `--cờ giá_trị` và `--cờ=giá_trị`; ném lỗi
+ * khi thiếu giá trị hoặc gặp tuỳ chọn lạ. Phần args còn lại là đích kiểm (mặc
+ * định: src).
  */
 export const resolveConfig = (argv, cwd = process.cwd()) => {
-  const args = [...argv];
-  const take = flag => {
-    const index = args.indexOf(flag);
-    if (index === -1) return null;
-    const [, value] = args.splice(index, 2);
-    return value;
-  };
+  const { values, positionals } = parseArgs({
+    args: argv,
+    options: { preset: { type: 'string' }, config: { type: 'string' } },
+    allowPositionals: true,
+    strict: true,
+  });
 
-  const configPath = take('--config');
-  const presetFlag = take('--preset');
-  const presetName = presetFlag ?? readOverlayPreset(cwd) ?? DEFAULT_PRESET;
-  const tiers = loadPreset(presetName).importTiers;
-  const config = configPath
-    ? { ...tiers, ...JSON.parse(readFileSync(configPath, 'utf8')) }
-    : tiers;
+  const overlayPreset = values.preset === undefined ? readOverlayPreset(cwd) : null;
+  const presetName = values.preset ?? overlayPreset ?? DEFAULT_PRESET;
 
-  return { config, presetName, targets: args.length ? args : ['src'] };
+  let tiers;
+  try {
+    tiers = loadPreset(presetName).importTiers;
+  } catch (error) {
+    if (overlayPreset === null) throw error;
+    throw new Error(`${error.message} (đọc từ ${OVERLAY_PATH})`);
+  }
+
+  const config =
+    values.config === undefined
+      ? tiers
+      : { ...tiers, ...JSON.parse(readFileSync(resolve(cwd, values.config), 'utf8')) };
+
+  return { config, presetName, targets: positionals.length ? positionals : ['src'] };
 };
 
 export const tierOf = (path, config) => {
