@@ -7,13 +7,18 @@ Rule này có **BỐN luật con. Kiểm thiếu một luật là báo "sạch" 
 3. Kim tự tháp trong mỗi khối.
 4. Kim tự tháp bên trong ngoặc của import nhiều dòng.
 
-Không cần kiểm bằng mắt:
+Không cần kiểm bằng mắt — bộ kiểm tự đọc `preset` trong overlay:
 
 ```bash
-node <plugin-root>/skills/ui-standard/scripts/check-import-order.mjs src
+yarn rn-ui-check-imports src            # dự án đã cài devDependency rn-ui-standard
+node <plugin-root>/skills/ui-standard/scripts/check-import-order.mjs src   # chưa cài
 ```
 
 ## Các tầng
+
+Sơ đồ dưới dùng alias của preset `rn-cli`. Preset `expo-router` thay bằng `@/…` — bảng đủ ở
+`conventions.md`. Alias `@/…` không có trong danh sách (vd `@/types`) vẫn là tầng 3 nhờ mục
+bắt-tất-cả `@` của preset, như `@src` với `rn-cli`.
 
 ```
 react · react-native · @components/Kit          ← tầng 1
@@ -32,10 +37,12 @@ thư viện bên thứ ba (react-i18next, @shopify/…) ← tầng 2
 
 - `@api/*` và `@stores/*` **luôn là khối riêng**, sau tầng 3.
 - **Alias không quyết định tầng, nguồn gốc mới quyết định.** `@src/screens/…` là màn khác
-  → tầng 4. `@src/hooks/…` là chung → tầng 3.
+  → tầng 4. `@src/hooks/…` là chung → tầng 3. (`expo-router`: `@/screens/…` tầng 4,
+  `@/hooks/…` tầng 3.)
 - Import tương đối (`../Box`, `./types`) luôn tầng 4, kể cả bên trong `components/Kit/`.
-- Import sâu vào Kit (`@components/Kit/Box`, `import type { X } from '@components/Kit/…'`)
-  vẫn là Kit → **tầng 1**, xếp kim tự tháp chung với barrel.
+- Import sâu vào Kit (`@components/Kit/Box`, `import type { X } from '@components/Kit/…'`;
+  `@/components/Kit/Box` với `expo-router`) vẫn là Kit → **tầng 1**, xếp kim tự tháp chung
+  với barrel.
 - Tầng 1 **không** có thứ tự cứng `react-native` → `Kit`. Chỉ `react` cố định đầu; phần
   còn lại theo kim tự tháp.
 
@@ -81,9 +88,9 @@ import { Box, Pressable, Text } from '@components/Kit';
 import { useTranslation } from 'react-i18next';
 
 import { Icon } from '@components/Icon';
+import { useThemeStyles } from '@theme';
 import { SCREENS } from '@constants/SCREENS';
 import { navigateTo } from '@navigation/actions';
-import { useThemeStyles } from '@theme';
 
 import { OrderItem } from '@api/orders/orders.type';
 
@@ -91,6 +98,25 @@ import { useOrderStore } from '@stores/orders';
 
 import OrderRow from './components/OrderRow';
 import { detailSheetRef } from '@src/screens/OrderDetails/constants';
+```
+
+Cùng file đó với preset `expo-router` (React Compiler bật nên không `memo`/`useCallback`):
+
+```ts
+import { StyleSheet } from 'react-native';
+import { Box, Pressable, Text } from '@/components/Kit';
+
+import { useTranslation } from 'react-i18next';
+
+import { useThemeStyles } from '@/theme';
+import { Icon } from '@/components/Icon';
+
+import { OrderItem } from '@/api/orders/orders.type';
+
+import { useOrderStore } from '@/stores/orders';
+
+import OrderRow from './components/OrderRow';
+import { detailSheetRef } from '@/screens/OrderDetails/constants';
 ```
 
 ## Bẫy khi codemod

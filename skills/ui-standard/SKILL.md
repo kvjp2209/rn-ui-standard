@@ -14,13 +14,18 @@ chữ, định hướng thị giác, file mẫu, và **các quyết định có 
 1. Đọc `docs/ui-standard/project.md` trước dòng code UI đầu tiên.
 2. Không có file đó → dừng lại, báo người dùng, đề nghị tạo từ
    `templates/project.md` của plugin. Đừng tự bịa giá trị token.
-3. Overlay **thắng** skill khi hai bên nói khác nhau. Mục "Quyết định có chủ đích" trong
+3. Xem front matter của overlay: `preset` (`rn-cli` mặc định | `expo-router`) và
+   `react-compiler`. Mở `references/conventions.md` để biết alias, thư mục, cách khai kiểu
+   route và luật memo của preset đó. Mọi chỗ skill nói "barrel Kit", "module Icon", khối
+   `api`/`stores` đều hiểu theo bảng của preset.
+4. Overlay **thắng** skill khi hai bên nói khác nhau. Mục "Quyết định có chủ đích" trong
    overlay là đã cân nhắc — **không tự ý "sửa"**.
 
 Chi tiết từng mảng nằm ở `references/` — mở đúng file khi đụng tới mảng đó:
 
 | Việc đang làm | Đọc |
 |---|---|
+| Alias, thư mục, kiểu route, memo theo preset | `references/conventions.md` |
 | Chọn màu, cỡ chữ, spacing, bóng | `references/tokens-typography.md` |
 | Viết hoặc sửa khối import | `references/import-order.md` |
 | Tạo màn, tách file, đặt tên, memo | `references/structure-naming.md` |
@@ -54,8 +59,10 @@ Chi tiết từng mảng nằm ở `references/` — mở đúng file khi đụn
 7. **Dùng Kit, không dùng primitive react-native.** `View` → `Box` · `Text` → Kit `Text` ·
    `Image` → Kit `Image`/`FastImage` · `ScrollView`/`TextInput`/`Pressable` → Kit.
    Ngoại lệ phải có comment lý do tại chỗ (xem `pitfalls.md` — ref, HOC cần View thật).
-8. **Icon chỉ qua `<Icon name="..." />`.** Cấm import `react-native-vector-icons/*` ngoài
-   `components/Icon`. Icon mới: thêm vào union `IconType` **và** `case` trong `Icon.tsx`.
+8. **Icon chỉ qua `<Icon name="..." />`.** Cấm import thư viện icon
+   (`react-native-vector-icons`, `@expo/vector-icons`, `lucide-react-native`…) ngoài module
+   Icon (`src/components/Icon`). Icon mới: thêm vào union `IconType` **và** `case` trong
+   `Icon.tsx`.
    Màu truyền qua prop `color`, không nhét vào `style`. Tên động khai kiểu `IconType`.
 9. **`FlashListV2` cho list mới.** Ngoại lệ có lý do (wheel picker cần `snapToInterval` +
    `getItemLayout` chính xác) thì ghi comment.
@@ -64,8 +71,10 @@ Chi tiết từng mảng nằm ở `references/` — mở đúng file khi đụn
 ### Code
 
 11. **Thứ tự import 4 tầng + kim tự tháp** — có **bốn** luật con, xem
-    `references/import-order.md`. `yarn lint` không bắt được; chạy
-    `node <plugin>/skills/ui-standard/scripts/check-import-order.mjs <file...>` tới khi về 0.
+    `references/import-order.md`. ESLint không bắt được; chạy bộ kiểm tới khi về 0:
+    `yarn rn-ui-check-imports <file...>` nếu dự án cài devDependency `rn-ui-standard`, không
+    thì `node <plugin>/skills/ui-standard/scripts/check-import-order.mjs <file...>`. Bộ kiểm
+    tự đọc `preset` trong overlay.
 12. **Không nhồi logic vào JSX.** `? :` lồng nhau, template string ghép ≥ 2 giá trị, `??`
     nối chuỗi → kéo ra biến có tên trước `return`, hoặc xuống `.logic.ts`/presenter.
 13. **Không dùng IIFE tính giá trị trong thân component.** Nhánh dựa trên dữ liệu miền
@@ -73,9 +82,14 @@ Chi tiết từng mảng nằm ở `references/` — mở đúng file khi đụn
 14. **Ngưỡng file: > 250 dòng nên tách, > 400 bắt buộc.** State + handler ra
     `<Màn>.logic.ts` (không JSX), render ở lại `.tsx`. File bảng tra/hằng số được miễn.
 15. **Không copy-paste module.** Trùng ≥ 2 nơi mới rút ra `components/` dùng chung.
-16. **Kiểu route khai trong `navigation/types.ts`**, không ghép `RouteProp` tại màn.
-17. **Màn hình luôn `export default memo(Screen)`.** Component con chỉ `memo` khi prop
-    thật sự ổn định — xem `structure-naming.md`.
+16. **Kiểu route khai một chỗ, theo router của preset.** React Navigation: khai trong
+    `navigation/types.ts`, không ghép `RouteProp` tại màn. Expo Router: file route đọc params
+    bằng `useLocalSearchParams<…>()` rồi truyền xuống màn qua props; không truyền object qua
+    params. Xem `structure-naming.md`.
+17. **memo theo React Compiler của dự án.** Compiler tắt: màn luôn
+    `export default memo(Screen)`, component con chỉ `memo` khi prop thật sự ổn định.
+    Compiler bật (`react-compiler: true`): không bọc `memo`/`useMemo`/`useCallback` thủ công,
+    màn `export default Screen`. Xem `structure-naming.md`.
 
 ### Trạng thái & chữ
 

@@ -14,6 +14,9 @@ src/screens/<Màn>/
 KHÔNG nhét nhiều màn vào một thư mục. Dấu hiệu đã sai: navigator phải import kiểu
 `@src/screens/A/B` — thò tay vào ruột thư mục của màn khác.
 
+Preset `expo-router`: file route trong `src/app/` chỉ đọc params và render màn từ
+`src/screens/<Màn>`; không đặt component, hook, utils trong `src/app/`.
+
 ## Đặt file theo chủ sở hữu
 
 Trước khi tạo file, hỏi *"màn nào sở hữu cái này?"* — rồi **đếm số nơi dùng thật**.
@@ -25,7 +28,7 @@ Trước khi tạo file, hỏi *"màn nào sở hữu cái này?"* — rồi **�
 | ≥ 2 màn, là logic miền | `src/api/<domain>/` (vd `<domain>.presenter.ts`) |
 | Primitive dựng trên Restyle, không biết miền | `src/components/Kit/` |
 
-- `src/api/` **không import ngược** từ `@components`. Cần union kiểu UI thì khai tại chỗ.
+- `src/api/` **không import ngược** từ `src/components/`. Cần union kiểu UI thì khai tại chỗ.
 - Component chỉ còn 1 nơi dùng mà đang nằm ở Kit/`components/` → trả về màn sở hữu.
   0 nơi dùng → xoá, kèm helper và test của nó.
 
@@ -38,7 +41,7 @@ Trước khi tạo file, hỏi *"màn nào sở hữu cái này?"* — rồi **�
   tệ hơn file dài.
 - **Miễn trừ file bảng tra / hằng số.** Phép thử: *thêm một mục mới có làm tăng số nhánh
   người đọc phải hiểu không?* Không → để yên dù dài. Thường gồm: file locale, registry
-  `Icon.tsx`, union `IconType`, `palette.ts`/`themes/*`, `navigation/types.ts`,
+  `Icon.tsx`, union `IconType`, `palette.ts`/`themes/*`, `navigation/types.ts` (rn-cli),
   `constants/*`. Store hay file logic dài **không** được miễn.
 
 ## Đặt tên
@@ -52,6 +55,8 @@ Trước khi tạo file, hỏi *"màn nào sở hữu cái này?"* — rồi **�
 
 ## Kiểu route
 
+### React Navigation (preset `rn-cli`)
+
 ```ts
 // navigation/types.ts
 export type OrderDetailsProp = RouteProp<HomeStackParamList, 'ORDER_DETAILS'>;
@@ -63,6 +68,27 @@ const { params } = useRoute<OrderDetailsProp>();
 ```
 
 Gom một chỗ thì đổi tên route là sửa một nơi, `tsc` chỉ ra phần còn lại.
+
+### Expo Router (preset `expo-router`)
+
+Typed routes sinh kiểu cho mọi `href`; kiểu params khai ở file route và chỉ ở đó.
+
+```tsx
+// src/app/orders/[orderId].tsx — chỉ đọc params rồi render màn
+import { useLocalSearchParams } from 'expo-router';
+
+import OrderDetails from '@/screens/OrderDetails';
+
+export default function OrderDetailsRoute() {
+  const { orderId } = useLocalSearchParams<{ orderId: string }>();
+
+  return <OrderDetails orderId={orderId} />;
+}
+```
+
+- Màn nhận params qua props có kiểu; **màn không tự gọi** `useLocalSearchParams`.
+- Params là chuỗi trên URL: **không truyền object** (`JSON.stringify(order)`). Truyền id, màn
+  tự lấy từ store/API.
 
 ## Thứ tự `return` của hook & destructure — kim tự tháp hai nhóm
 
@@ -87,6 +113,16 @@ return {
 ```
 
 ## memo / useMemo / useCallback
+
+### React Compiler bật (`react-compiler: true`)
+
+- **Không** bọc `memo` / `useMemo` / `useCallback` thủ công — compiler tự memo component, giá
+  trị dẫn xuất và handler. Màn `export default Screen`.
+- Ngoại lệ (thư viện cần tham chiếu ổn định mà compiler không suy được) phải có comment lý do
+  tại chỗ.
+- Mục dưới không áp dụng.
+
+### React Compiler tắt (mặc định của `rn-cli`)
 
 - **Màn hình luôn `export default memo(Screen)`.**
 - **Component con: chỉ `memo` khi prop thật sự ổn định.** Mở nơi gọi ra xem — `memo` vô

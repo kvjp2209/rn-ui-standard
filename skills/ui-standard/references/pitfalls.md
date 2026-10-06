@@ -22,10 +22,10 @@
 
 ## Test
 
-- Import barrel `@components/Kit` trong test có thể kéo `@react-navigation/native` dạng ESM
-  và làm jest chết (`SyntaxError: Unexpected token 'export'`). Hoặc cấu hình
-  `transformIgnorePatterns` ngay từ đầu dự án, hoặc import sâu (`@components/Kit/Box`) /
-  `import type` trong test.
+- Import barrel Kit trong test có thể kéo thư viện điều hướng dạng ESM
+  (`@react-navigation/native`) và làm jest chết (`SyntaxError: Unexpected token 'export'`).
+  Hoặc cấu hình `transformIgnorePatterns` ngay từ đầu dự án (preset `jest-expo` đã làm sẵn cho
+  hệ Expo), hoặc import sâu (`<barrel Kit>/Box`) / `import type` trong test.
 - Component dùng Reanimated khó render trong jest nếu chưa cấu hình. Tách logic thuần ra
   `*.helpers.ts` rồi test file đó; phần render verify trên simulator.
 - **Test theme khoá tên, không chỉ khoá giá trị.** Test chỉ kiểm tên variant không bắt được
