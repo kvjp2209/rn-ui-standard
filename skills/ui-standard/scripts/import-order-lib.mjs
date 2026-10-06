@@ -30,11 +30,13 @@ const PRESET_EXT = '.json';
 const PRESET_NAME_RE = /^[\w-]+$/;
 const BOM_RE = /^\uFEFF/;
 const FRONT_MATTER_FENCE = '---';
-const OVERLAY_PRESET_RE = /^preset:[ \t]*(['"]?)([\w-]+)\1[ \t]*(?:#.*)?$/;
+const OVERLAY_PRESET_KEY_RE = /^preset[ \t]*:/;
+const OVERLAY_PRESET_RE = /^preset[ \t]*:[ \t]*(['"]?)([\w-]+)\1[ \t]*(?:#.*)?$/;
 
 const matches = (path, alias) => path === alias || path.startsWith(`${alias}/`);
 const matchesAny = (path, aliases) => aliases.some(a => matches(path, a));
 const stripComment = line => line.replace(/\s*\/\/.*$/, '');
+const isFence = line => line.trimEnd() === FRONT_MATTER_FENCE;
 
 /**
  * Lists the presets shipped in presets/ (file names without .json), sorted.
@@ -75,24 +77,26 @@ export const loadPreset = name => {
  * Reads `preset:` from the overlay front matter under cwd. Returns null when
  * there is no overlay, no front matter (a block between two `---` lines at the
  * top of the file) or no `preset:` key; throws when the `preset:` line cannot
- * be read. Accepts quotes, a trailing `# comment`, a UTF-8 BOM and CRLF.
+ * be read. Accepts quotes, a trailing `# comment`, spaces before the colon,
+ * trailing spaces after a `---` line, a UTF-8 BOM and CRLF.
  *
  * Đọc `preset:` trong front matter của overlay dưới cwd. Trả null khi không có
  * overlay, không có front matter (khối nằm giữa hai dòng `---` ở đầu file)
  * hoặc không có khoá `preset:`; ném lỗi khi dòng `preset:` không đọc được.
- * Chấp nhận nháy, chú thích `# …` cuối dòng, BOM UTF-8 và CRLF.
+ * Chấp nhận nháy, chú thích `# …` cuối dòng, dấu cách trước dấu hai chấm, dấu
+ * cách thừa sau dòng `---`, BOM UTF-8 và CRLF.
  */
 export const readOverlayPreset = cwd => {
   const overlay = join(cwd, OVERLAY_PATH);
   if (!existsSync(overlay)) return null;
 
-  const lines = readFileSync(overlay, 'utf8').replace(BOM_RE, '').split(/\r?\n/);
-  if (lines[0] !== FRONT_MATTER_FENCE) return null;
+  const [opening, ...rest] = readFileSync(overlay, 'utf8').replace(BOM_RE, '').split(/\r?\n/);
+  if (!isFence(opening)) return null;
 
-  const closing = lines.indexOf(FRONT_MATTER_FENCE, 1);
+  const closing = rest.findIndex(isFence);
   if (closing === -1) return null;
 
-  const line = lines.slice(1, closing).find(l => l.startsWith('preset:'));
+  const line = rest.slice(0, closing).find(l => OVERLAY_PRESET_KEY_RE.test(l));
   if (line === undefined) return null;
 
   const match = line.match(OVERLAY_PRESET_RE);

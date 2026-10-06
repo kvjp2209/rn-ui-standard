@@ -10,7 +10,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { delimiter, dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import {
@@ -45,10 +45,10 @@ const makeProject = overlay => {
   return dir;
 };
 
-// Runs the CLI as a child process from `cwd`; `script` lets a test go through a symlink.
-// Chạy CLI như một tiến trình con tại `cwd`; `script` để test chạy qua symlink.
-const runCli = (args, cwd, script = CLI) =>
-  spawnSync(process.execPath, [script, ...args], { cwd, encoding: 'utf8' });
+// Runs the CLI through `node` as a child process from `cwd`.
+// Chạy CLI qua `node` như một tiến trình con tại `cwd`.
+const runCli = (args, cwd) =>
+  spawnSync(process.execPath, [CLI, ...args], { cwd, encoding: 'utf8' });
 
 // Copies the lib next to a presets/ dir holding only `files` ({ file name: content }) and imports
 // that copy, so the loader can be tested against presets other than the shipped ones.
@@ -66,9 +66,12 @@ const importLibWithPresets = async files => {
   return import(pathToFileURL(join(scripts, 'import-order-lib.mjs')).href);
 };
 
-// Both streams of a CLI run, used as the assertion message so a crash shows up in the report.
-// Cả hai luồng đầu ra của một lần chạy CLI, làm thông điệp assert để thấy được khi CLI sập.
-const outputOf = result => `stdout:\n${result.stdout}\nstderr:\n${result.stderr}`;
+// Everything a CLI run left behind, used as the assertion message so a crash or a spawn failure
+// (e.g. a missing exec bit) shows up in the report.
+// Mọi thứ một lần chạy CLI để lại, làm thông điệp assert để thấy được khi CLI sập hoặc không khởi
+// chạy được (vd thiếu bit thực thi).
+const outputOf = result =>
+  `stdout:\n${result.stdout}\nstderr:\n${result.stderr}\nspawn error: ${result.error ?? 'none'}`;
 
 const EXPO_OVERLAY = '---\npreset: expo-router\nreact-compiler: true\n---\n\n# Overlay\n';
 
@@ -80,13 +83,18 @@ const EXPO_OVERLAY_VARIANTS = {
   'có chú thích cuối dòng': '---\npreset: expo-router # preset cho Expo Router\n---\n',
   'có BOM ở đầu file': '\uFEFF---\npreset: expo-router\n---\n',
   'xuống dòng kiểu CRLF': '---\r\npreset: expo-router\r\n---\r\n\r\n# Overlay\r\n',
+  'có dấu cách thừa sau dòng --- mở đầu': '--- \npreset: expo-router\n---\n',
+  'có dấu cách và tab thừa sau dòng --- đóng': '---\npreset: expo-router\n---  \t\n\n# Overlay\n',
+  'có dấu cách trước dấu hai chấm': '---\npreset : expo-router\n---\n',
 };
 
 // `preset:` lines that cannot be read: they must raise an error, not fall back silently.
 // Các dòng `preset:` không đọc được: phải báo lỗi chứ không lặng lẽ dùng mặc định.
 const MALFORMED_PRESET_LINES = [
   'preset: expo router',
+  'preset : expo router',
   'preset:',
+  'preset :',
   'preset: "expo-router',
   'preset: ../package',
 ];
@@ -166,6 +174,10 @@ test('front matter không có khoá preset thì trả null', () => {
   // Dòng `preset:` nằm dưới front matter thì không tính.
   const body = '---\nreact-compiler: true\n---\npreset: expo-router\n';
   assert.equal(readOverlayPreset(makeProject(body)), null);
+  // Other keys that merely start with "preset" are not the preset key.
+  // Các khoá khác chỉ bắt đầu bằng "preset" thì không phải khoá preset.
+  const lookalikes = '---\npresets: expo-router\npreset-name: expo-router\n---\n';
+  assert.equal(readOverlayPreset(makeProject(lookalikes)), null);
 });
 
 test('front matter không có dòng đóng --- thì trả null', () => {
@@ -263,8 +275,11 @@ test('preset thiếu importTiers thì báo lỗi rõ', async () => {
 
 test('tên preset chứa đường dẫn hoặc rỗng thì bị từ chối, không đọc file ngoài presets/', () => {
   const dir = makeProject();
-  assert.throws(() => loadPreset('../package'), /\.\.\/package/);
-  assert.throws(() => resolveConfig(['--preset', '../package'], dir), /\.\.\/package/);
+  assert.throws(() => loadPreset('../package'), /preset không tồn tại: \.\.\/package/);
+  assert.throws(
+    () => resolveConfig(['--preset', '../package'], dir),
+    /preset không tồn tại: \.\.\/package/,
+  );
   assert.throws(() => resolveConfig(['--preset='], dir), /preset không tồn tại/);
 });
 
@@ -334,14 +349,23 @@ test('CLI thoát mã 2, báo lỗi ở stderr và để trống stdout khi prese
   assert.equal(result.stdout, '', outputOf(result));
 });
 
-test('CLI chạy được qua symlink node_modules/.bin như khi yarn/npm cài bin', () => {
+// Test options for spawning a shebang script directly, which only works on POSIX.
+// Tuỳ chọn cho test chạy trực tiếp một script có shebang, chỉ dùng được trên POSIX.
+const POSIX_ONLY = { skip: process.platform === 'win32' && 'chỉ áp dụng trên POSIX' };
+
+// The bin symlink itself is spawned, as yarn/npm users run it, so the shebang and the exec bit are
+// covered too. PATH gets this Node's directory so `#!/usr/bin/env node` finds the same Node.
+// Chính symlink bin được chạy, như người dùng yarn/npm, nên shebang và bit thực thi cũng được phủ.
+// PATH được thêm thư mục của Node đang chạy để `#!/usr/bin/env node` tìm đúng Node này.
+test('CLI chạy được qua symlink node_modules/.bin như khi yarn/npm cài bin', POSIX_ONLY, () => {
   const dir = makeProject(EXPO_OVERLAY);
   mkdirSync(join(dir, 'src'));
   writeFileSync(join(dir, 'src/Ok.tsx'), EXPO_OK);
   mkdirSync(join(dir, 'node_modules/.bin'), { recursive: true });
   const link = join(dir, 'node_modules/.bin/rn-ui-check-imports');
   symlinkSync(CLI, link);
-  const result = runCli([], dir, link);
+  const PATH = `${dirname(process.execPath)}${delimiter}${process.env.PATH ?? ''}`;
+  const result = spawnSync(link, [], { cwd: dir, encoding: 'utf8', env: { ...process.env, PATH } });
   assert.equal(result.status, 0, outputOf(result));
   // Exit 0 alone could mean "found nothing": the file must really have been scanned.
   // Mã thoát 0 một mình có thể là "không thấy gì": file phải thật sự được quét.
