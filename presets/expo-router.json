@@ -24,7 +24,8 @@
       "@/libs",
       "@/locale",
       "@/theme",
-      "@/utils"
+      "@/utils",
+      "@"
     ],
     "local": ["@/screens"],
     "api": ["@/api"],

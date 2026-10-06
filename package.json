@@ -9,7 +9,6 @@
   },
   "exports": {
     "./eslint": "./eslint/index.js",
-    "./presets/*": "./presets/*.json",
     "./package.json": "./package.json"
   },
   "scripts": {
@@ -20,6 +19,11 @@
   },
   "peerDependencies": {
     "eslint": "^9.0.0"
+  },
+  "peerDependenciesMeta": {
+    "eslint": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "eslint": "^9.39.0"
