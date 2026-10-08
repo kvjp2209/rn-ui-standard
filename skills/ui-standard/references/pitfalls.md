@@ -51,8 +51,9 @@
 
 ## i18n
 
-- Key ghép lúc chạy (`t(\`status_${s}\`)`) không thấy được bằng grep thô — đừng xoá "key
-  thừa" dựa trên quét chuỗi. Khai union kiểu cho key động để `tsc` bắt thiếu.
+- Đừng ghép key lúc chạy (`t(\`status_${s}\`)`): grep không thấy, `tsc` không kiểm được.
+  Dùng bảng map viết rõ (`copy-vi.md`, luật 6). Code cũ còn key ghép thì đừng xoá "key
+  thừa" dựa trên quét chuỗi.
 - Chuỗi nội suy chứa ngày tháng có `/` bị escape HTML nếu `interpolation.escapeValue` bật —
   React Native không cần escape, nên tắt.
 

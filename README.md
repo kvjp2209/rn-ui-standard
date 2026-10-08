@@ -22,6 +22,7 @@ templates/
   project.md             overlay để copy vào dự án
   eslint-ui-rules.js     luật ESLint cho dự án .eslintrc chưa cài devDependency
   theme-contract.test.ts khoá hợp đồng tên token
+  locale-keys.test.ts    khoá luật đặt tên key i18n (phẳng, đủ nguyên văn tiếng Anh)
 tests/                   node --test cho preset, bộ kiểm import, factory ESLint và đồng bộ version
 ```
 
@@ -54,7 +55,7 @@ Tuỳ chọn: thay lệnh `marketplace add` ở trên bằng bản ghim vào cù
 4, để nội dung skill và bộ công cụ luôn khớp phiên bản:
 
 ```bash
-claude plugin marketplace add https://github.com/kvjp2209/rn-ui-standard.git#v1.2.0 --scope project
+claude plugin marketplace add https://github.com/kvjp2209/rn-ui-standard.git#v1.3.0 --scope project
 ```
 
 **2. Tạo overlay:** copy `templates/project.md` → `docs/ui-standard/project.md`, đặt `preset`
@@ -72,7 +73,7 @@ code UI đầu tiên.
 **4. Cài phần máy kiểm được làm devDependency** (ghim tag):
 
 ```bash
-yarn add -D github:kvjp2209/rn-ui-standard#v1.2.0 eslint@^9
+yarn add -D github:kvjp2209/rn-ui-standard#v1.3.0 eslint@^9
 ```
 
 `eslint.config.js` (flat config) cho dự án Expo SDK 57, nền là `eslint-config-expo`:
@@ -109,6 +110,9 @@ vào `.eslintrc.js` như bản 1.1.
 
 **5. Tuỳ chọn:** copy `templates/theme-contract.test.ts` vào `src/theme/__tests__/`, đặt
 `SIZES` / `RADII` theo overlay.
+
+**6. Tuỳ chọn:** copy `templates/locale-keys.test.ts` vào `src/locale/__tests__/`, điền
+`NOT_PROSE` theo dự án. Luật đặt tên key ở `skills/ui-standard/references/copy-vi.md`.
 
 Nếu dự án đang có skill UI riêng trong `.claude/skills/`, gỡ nó sau khi overlay đã đủ để
 tránh hai nguồn luật.

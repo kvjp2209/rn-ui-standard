@@ -96,9 +96,12 @@ Chi tiết từng mảng nằm ở `references/` — mở đúng file khi đụn
 
 18. **Màn có tải dữ liệu phải đủ 4 trạng thái:** loading → có dữ liệu → rỗng → lỗi. Không
     trạng thái nào rơi vào màn trắng. Xem `references/states.md`.
-19. **Không hardcode chuỗi hiển thị.** Key mới có đủ ở mọi file locale. Viết hoa kiểu
-    trình bày (ngoại lệ overlay cho phép, vd nhãn nút) làm bằng `textTransform`, chuỗi
-    locale giữ dạng câu thường.
+19. **Không hardcode chuỗi hiển thị.** Key mới có đủ ở mọi file locale. Key phẳng một tầng
+    và **ghi đủ nguyên văn bản tiếng Anh** dạng snake_case ('Try again' → `try_again`):
+    không viết tắt, không đuôi `_title`/`_desc`/`_hint`, không nhóm lồng, không ghép key từ
+    enum. Khoá bằng `templates/locale-keys.test.ts`. Viết hoa kiểu trình bày (ngoại lệ
+    overlay cho phép, vd nhãn nút) làm bằng `textTransform`, chuỗi locale giữ dạng câu
+    thường.
 20. **Cỡ lớn (`T24B`/`T30B`) chỉ cho thứ người dùng nhìn đầu tiên** — số chủ đạo, số tiền,
     giá. Mặc định lùi về `T16B`–`T18B`. Tiêu đề modal/sheet là `T18B`, không phải cỡ tiêu
     đề màn. **Đừng ánh xạ variant theo tên vai trò** (`metricNumber → T24B` là bẫy).

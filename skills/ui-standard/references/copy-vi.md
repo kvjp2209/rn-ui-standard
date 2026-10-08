@@ -5,11 +5,51 @@
 - **Không hardcode chuỗi hiển thị.** `useTranslation()` trong component, `i18n.t()` ngoài
   React (store, service).
 - **Mọi key mới có đủ ở mọi file locale** (`en.ts`, `vi.ts`…).
-- Key ngắn → `snake_case` (`phone_number`, `go_back`).
-- Key dài → cả câu tiếng Anh làm key (`create_a_new_account`).
-- **Key khớp nghĩa của giá trị.** Không prefix namespace kiểu `screen_x_title`.
 - Nhánh chọn chuỗi theo dữ liệu miền → presenter trả `{ key, params }`, màn gọi `t()`.
 - Chuỗi hiển thị không bao giờ nằm trong comment như một cách "tạm".
+
+## Đặt tên key
+
+Key ghi **đủ nguyên văn bản tiếng Anh**, để ai cũng tìm ra và dùng lại được theo đúng điều
+chuỗi đó nói. Key viết tắt hay gắn đuôi vị trí không nói chuỗi là gì, nên về sau không ai
+dùng lại được.
+
+1. **Phẳng, một tầng.** Không nhóm lồng (`menu.packages`, `tabs.today`), không tiền tố màn
+   hay tính năng (`login_…`, `settings_…`).
+2. **Key = toàn bộ bản tiếng Anh dạng snake_case**, đủ mọi từ, đúng thứ tự: chữ thường;
+   `{{param}}` thành tên param; `&` thành `and`; bỏ dấu nháy; mọi cụm ký tự khác `[a-z0-9]`
+   thành `_`; bỏ `_` ở hai đầu. Câu dài hay đoạn nhiều câu cũng vậy: key ghi hết.
+3. **Cấm** đuôi vị trí (`_title`, `_desc`, `_hint`, `_note`, `_reason`, `_label`,
+   `_subtitle`, `_body`) và dạng rút gọn của một chuỗi dài hơn.
+4. **Đổi chữ tiếng Anh thì đổi key theo**, ở mọi chỗ gọi. Một chuỗi tiếng Anh là một key,
+   dùng chung cho mọi màn. Ngôn ngữ khác cần hai cách nói cho cùng một chuỗi tiếng Anh thì
+   sửa bản tiếng Anh cho khác nhau (`activity_schedule: 'Activity schedule'` bên cạnh
+   `schedule: 'Schedule'`), không thêm đuôi để tách.
+5. **Chỉ chuỗi không phải chữ tiếng Anh** mới có key nói nó là gì: giá trị mẫu
+   (`example_email: 'name@example.com'`), ký hiệu (`no_value: '—'`), tên ngôn ngữ viết bằng
+   chính nó (`vietnamese: 'Tiếng Việt'`). Test liệt kê đích danh các key này.
+6. **Nhãn chọn theo enum đi qua bảng map viết rõ**
+   (`{ PAID: 'paid', REFUNDED: 'refunded' } as const satisfies Record<OrderStatus, string>`),
+   không ghép key từ giá trị enum (`` t(`status_${status}`) ``): key ghép không grep được,
+   `tsc` không kiểm được, và không phải nguyên văn tiếng Anh.
+
+| Chuỗi tiếng Anh | Sai | Đúng |
+|---|---|---|
+| 'Sign out of this device?' | `sign_out_confirm_title`, `profile.sign_out.title` | `sign_out_of_this_device` |
+| 'Try again' | `retry` | `try_again` |
+| 'Sign in' | `login` | `sign_in` |
+| 'Orders placed today and who paid for them' | `orders_hint`, `menu.orders_hint` | `orders_placed_today_and_who_paid_for_them` |
+| '{{count}} orders' | `order_count` | `count_orders` |
+| 'Products & stock' | `products_stock` | `products_and_stock` |
+| "The shop's stock per product" | `shop_stock_desc` | `the_shops_stock_per_product` |
+| 'Version {{number}}' | `app_version` | `version_number` |
+
+**Khoá bằng test:** copy `templates/locale-keys.test.ts` vào `src/locale/__tests__/` và điền
+`NOT_PROSE` theo dự án. Test báo từng key sai kèm key đúng
+(`orders_hint → orders_placed_today_and_who_paid_for_them`).
+
+Dự án đang có file locale kiểu cũ (key lồng, key viết tắt): luật áp cho mọi key mới. Test thứ
+hai và thứ ba sẽ báo key cũ cho tới khi đổi hết, nên chỉ bật chúng khi file locale đã sạch.
 
 ## Giọng điệu
 

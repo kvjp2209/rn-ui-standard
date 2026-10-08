@@ -1,6 +1,6 @@
 {
   "name": "rn-ui-standard",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "private": true,
   "description": "Quy chuẩn UI dùng chung cho dự án React Native + Shopify Restyle: Claude Code plugin, preset, ESLint flat config và bộ kiểm thứ tự import.",
   "license": "UNLICENSED",
